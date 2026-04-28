@@ -81,16 +81,54 @@ async function api(path, opts = {}) {
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   localStorage.setItem(THEME_KEY, theme);
-  // Atualiza estado dos botões de tema (se a página de settings já estiver montada).
   document.querySelectorAll("[data-theme-set]").forEach(el => {
     el.classList.toggle("active", el.dataset.themeSet === theme);
   });
 }
 
+// Troca de tema com animação circular a partir do ponto de clique.
+// Claro → escuro: círculo fecha (colapsa) no ponto clicado.
+// Escuro → claro: círculo abre (expande) a partir do ponto clicado.
+function applyThemeWithAnimation(theme, event) {
+  if (!event || !document.startViewTransition ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    applyTheme(theme);
+    return;
+  }
+  const x = event.clientX, y = event.clientY;
+  const radius = Math.hypot(
+    Math.max(x, window.innerWidth  - x),
+    Math.max(y, window.innerHeight - y)
+  );
+  const transition = document.startViewTransition(() => applyTheme(theme));
+  transition.ready.then(() => {
+    if (theme !== 'dark') {
+      // indo para CLARO: nova view expande em círculo
+      document.documentElement.animate(
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+        { duration: 480, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
+      );
+    } else {
+      // indo para ESCURO: view antiga colapsa em círculo
+      document.documentElement.animate(
+        { clipPath: [`circle(${radius}px at ${x}px ${y}px)`, `circle(0px at ${x}px ${y}px)`] },
+        { duration: 480, easing: 'ease-in-out', pseudoElement: '::view-transition-old(root)' }
+      );
+    }
+  });
+}
+
+// --------------- TOKEN BASEADO NO HORÁRIO ---------------
+
+function getCurrentTimeToken() {
+  const now = new Date();
+  return String(now.getHours()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0');
+}
+
 function bindGlobal() {
-  document.getElementById("theme-toggle").addEventListener("click", () => {
+  document.getElementById("theme-toggle").addEventListener("click", (e) => {
     const cur = document.documentElement.dataset.theme;
-    applyTheme(cur === "dark" ? "light" : "dark");
+    applyThemeWithAnimation(cur === "dark" ? "light" : "dark", e);
   });
   document.getElementById("logout").addEventListener("click", () => {
     localStorage.removeItem(TOKEN_KEY);
@@ -117,22 +155,48 @@ function bindGlobal() {
 // --------------- LOGIN ---------------
 
 function bindLogin() {
+  const input    = document.getElementById("token-input");
+  const nowEl    = document.getElementById("login-token-now");
+  const secsEl   = document.getElementById("login-countdown");
+  let lastToken  = getCurrentTimeToken();
+
+  function tick() {
+    const tok  = getCurrentTimeToken();
+    const secs = 60 - new Date().getSeconds();
+    if (nowEl)  nowEl.textContent  = tok;
+    if (secsEl) secsEl.textContent = secs;
+    if (tok !== lastToken) {
+      lastToken = tok;
+      if (!input.dataset.userTyped) input.value = tok;
+    }
+  }
+
+  input.value = lastToken;
+  tick();
+  setInterval(tick, 1000);
+  input.addEventListener("input", () => { input.dataset.userTyped = "1"; });
+
   const submit = () => {
-    const tok = document.getElementById("token-input").value.trim();
+    const tok = input.value.trim();
     if (!tok) return;
     localStorage.setItem(TOKEN_KEY, tok);
     enterApp();
   };
   document.getElementById("token-submit").addEventListener("click", submit);
-  document.getElementById("token-input").addEventListener("keydown", e => {
-    if (e.key === "Enter") submit();
-  });
+  input.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
 }
 
 function showLogin() {
   document.getElementById("view-login").hidden = false;
   document.getElementById("view-app").hidden = true;
   stopAllTimers();
+  const input = document.getElementById("token-input");
+  if (input) {
+    input.value = getCurrentTimeToken();
+    delete input.dataset.userTyped;
+    input.focus();
+  }
+  document.getElementById("login-error").hidden = true;
 }
 
 async function enterApp() {
@@ -719,8 +783,8 @@ async function refreshLogs() {
 
 function bindSettings() {
   document.querySelectorAll("[data-theme-set]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      applyTheme(btn.dataset.themeSet);
+    btn.addEventListener("click", (e) => {
+      applyThemeWithAnimation(btn.dataset.themeSet, e);
     });
   });
   document.getElementById("configure-all-browsers").addEventListener("click", () => configureAllBrowsers());

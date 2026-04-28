@@ -6,10 +6,8 @@
 package admin
 
 import (
-	"crypto/rand"
 	"crypto/subtle"
 	"embed"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -30,7 +28,6 @@ var uiAssets embed.FS
 // Server é a HTTP API administrativa.
 type Server struct {
 	addr         string
-	token        string
 	matcher      *filter.Matcher
 	log          *logger.Logger
 	whitelistPth string
@@ -40,18 +37,12 @@ type Server struct {
 	srv *http.Server
 }
 
-// New cria o servidor admin. tokenPath é o caminho do arquivo onde o token
-// é persistido (criado se não existir). whitelistPath é o caminho do
+// New cria o servidor admin. whitelistPath é o caminho do
 // whitelist.json para que /whitelist/reload saiba o que recarregar.
 // proxyAddr é só informativo (mostrado na UI).
-func New(addr, tokenPath, whitelistPath, proxyAddr string, m *filter.Matcher, lg *logger.Logger) (*Server, error) {
-	tok, err := loadOrCreateToken(tokenPath)
-	if err != nil {
-		return nil, err
-	}
+func New(addr, whitelistPath, proxyAddr string, m *filter.Matcher, lg *logger.Logger) (*Server, error) {
 	s := &Server{
 		addr:         addr,
-		token:        tok,
 		matcher:      m,
 		log:          lg,
 		whitelistPth: whitelistPath,
@@ -93,7 +84,7 @@ func New(addr, tokenPath, whitelistPath, proxyAddr string, m *filter.Matcher, lg
 }
 
 // Token devolve o token administrativo (usado pelo subcomando "ui").
-func (s *Server) Token() string { return s.token }
+func (s *Server) Token() string { return currentToken() }
 
 // ListenAndServe inicia a API admin. Bloqueia até erro ou Shutdown.
 func (s *Server) ListenAndServe() error {
@@ -112,22 +103,35 @@ func (s *Server) Shutdown() error {
 	return s.srv.Close()
 }
 
+// currentToken retorna o token baseado na hora e minuto atuais, ex: "0953".
+func currentToken() string {
+	return time.Now().Format("1504")
+}
+
+// prevToken retorna o token do minuto anterior (para tolerância na virada do minuto).
+func prevToken() string {
+	return time.Now().Add(-time.Minute).Format("1504")
+}
+
+// tokenOK verifica o token recebido contra atual e anterior.
+func tokenOK(got, want string) bool {
+	g, w := []byte(got), []byte(want)
+	if len(g) != len(w) {
+		return false
+	}
+	return subtle.ConstantTimeCompare(g, w) == 1
+}
+
 // auth aplica verificação do header Authorization: Bearer <token> ou de
 // um cookie/query "t" (para a UI carregar via link).
 func (s *Server) auth(next http.HandlerFunc) http.HandlerFunc {
-	wantHeader := []byte("Bearer " + s.token)
-	wantToken := []byte(s.token)
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Header Authorization tem precedência.
-		if got := []byte(r.Header.Get("Authorization")); len(got) == len(wantHeader) &&
-			subtle.ConstantTimeCompare(got, wantHeader) == 1 {
+		cur, prv := currentToken(), prevToken()
+		if got := r.Header.Get("Authorization"); tokenOK(got, "Bearer "+cur) || tokenOK(got, "Bearer "+prv) {
 			next(w, r)
 			return
 		}
-		// Fallback: query string (?t=...). Só serve para chamadas GET de UI;
-		// como o admin escuta apenas em loopback e o token é único, é ok.
-		if got := []byte(r.URL.Query().Get("t")); len(got) == len(wantToken) &&
-			subtle.ConstantTimeCompare(got, wantToken) == 1 {
+		if got := r.URL.Query().Get("t"); tokenOK(got, cur) || tokenOK(got, prv) {
 			next(w, r)
 			return
 		}
@@ -426,27 +430,3 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 	_ = json.NewEncoder(w).Encode(body)
 }
 
-// loadOrCreateToken lê o token do disco ou gera um novo (32 bytes hex).
-func loadOrCreateToken(path string) (string, error) {
-	if b, err := os.ReadFile(path); err == nil && len(b) > 0 {
-		// Remove whitespace para tolerar editores que acrescentam newline.
-		out := make([]byte, 0, len(b))
-		for _, c := range b {
-			if c != '\n' && c != '\r' && c != ' ' && c != '\t' {
-				out = append(out, c)
-			}
-		}
-		if len(out) > 0 {
-			return string(out), nil
-		}
-	}
-	buf := make([]byte, 32)
-	if _, err := rand.Read(buf); err != nil {
-		return "", err
-	}
-	tok := hex.EncodeToString(buf)
-	if err := os.WriteFile(path, []byte(tok), 0o600); err != nil {
-		return "", err
-	}
-	return tok, nil
-}

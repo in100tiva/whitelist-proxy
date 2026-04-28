@@ -88,8 +88,7 @@ func startRuntime() (*appRuntime, error) {
 		}
 	}()
 
-	tokenPath := stableTokenPath()
-	adminSrv, err := admin.New(adminAddr, tokenPath, whitelistPath, proxyAddr, matcher, lg)
+	adminSrv, err := admin.New(adminAddr, whitelistPath, proxyAddr, matcher, lg)
 	if err != nil {
 		return nil, fmt.Errorf("admin: %w", err)
 	}

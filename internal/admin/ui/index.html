@@ -19,16 +19,17 @@
       </svg>
     </div>
     <h1>Whitelist Proxy</h1>
-    <p class="muted">Cole o token administrativo para entrar.</p>
-    <input id="token-input" type="password" placeholder="Token" autocomplete="off" autofocus>
+    <p class="muted">O token é o horário atual no formato HHMM.</p>
+    <input id="token-input" type="text" placeholder="Ex: 0953" autocomplete="off" autofocus inputmode="numeric">
     <button id="token-submit" class="btn btn-primary btn-lg btn-block">
       <span>Entrar</span>
     </button>
     <div id="login-error" class="alert alert-danger" hidden></div>
-    <p class="muted login-hint">
-      O token está em <code>admin.token</code>, ao lado do <code>proxy.exe</code>.
-      Use <code>proxy.exe ui</code> para abrir esta página com login automático.
-    </p>
+    <div class="login-token-display">
+      <span class="login-token-label">Token agora</span>
+      <code id="login-token-now" class="login-token-value">----</code>
+      <span class="login-token-expire">muda em <strong><span id="login-countdown">--</span>s</strong></span>
+    </div>
   </div>
 </div>
 

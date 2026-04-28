@@ -102,6 +102,13 @@
 
 [hidden] { display: none !important; }
 
+/* View Transitions — animação circular de troca de tema */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
 html, body {
   margin: 0;
   padding: 0;
@@ -204,6 +211,42 @@ input, select, textarea { font-family: inherit; }
   margin-top: 24px !important;
   font-size: 12px;
   line-height: 1.6;
+}
+
+/* Display do token baseado no horário */
+.login-token-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.login-token-label {
+  font-size: 11px;
+  color: var(--fg-tertiary);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+.login-token-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--brand);
+  font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace;
+  flex: 1;
+  text-align: center;
+}
+.login-token-expire {
+  font-size: 11px;
+  color: var(--fg-tertiary);
+  white-space: nowrap;
+}
+.login-token-expire strong {
+  color: var(--fg-secondary);
 }
 
 /* ===================================================================
