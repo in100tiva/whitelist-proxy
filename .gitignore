@@ -1,0 +1,6 @@
+proxy
+proxy.exe
+*.exe
+logs/
+admin.token
+whitelist.json
