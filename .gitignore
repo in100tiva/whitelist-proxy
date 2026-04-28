@@ -1,5 +1,5 @@
-proxy
-proxy.exe
+/proxy
+/proxy.exe
 *.exe
 logs/
 admin.token
