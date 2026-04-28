@@ -337,11 +337,49 @@ var hopByHopHeaders = map[string]bool{
 // redirectBlocked redireciona o cliente para a página de acesso bloqueado na UI admin.
 // Para requisições HTTP comuns, faz um redirect 302 normal.
 // Para CONNECT (HTTPS), responde com 302 antes de aceitar o túnel — Firefox segue
-// o redirect; Chrome exibe seu próprio erro de conexão (sem MITM não há alternativa).
+// redirectBlocked envia a resposta de bloqueio adequada para cada tipo de request:
+//
+//   - HTTP normal: redirect 302 para a página bonita do admin (funciona em todos os browsers).
+//   - CONNECT (HTTPS): respond com 403 + HTML com meta-refresh. Firefox renderiza o corpo
+//     da resposta de erro do CONNECT e segue o meta-refresh; Chrome mostra ERR_TUNNEL_CONNECTION_FAILED
+//     (sem MITM não há alternativa para Chrome em HTTPS).
 func (s *Server) redirectBlocked(w http.ResponseWriter, r *http.Request, host string) {
 	dest := "http://" + s.adminAddr + "/blocked?host=" + url.QueryEscape(host)
+	if r.Method == http.MethodConnect {
+		// CONNECT: serve HTML direto — Firefox renderiza o corpo de respostas de erro
+		// do CONNECT (4xx). O meta-refresh navega para a página completa do admin.
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprintf(w, connectBlockedHTML, dest, host, dest)
+		return
+	}
 	http.Redirect(w, r, dest, http.StatusFound)
 }
+
+// connectBlockedHTML é a página mínima enviada no corpo de uma resposta 403 ao CONNECT.
+// O meta-refresh navega imediatamente para a página de bloqueio completa no admin server.
+const connectBlockedHTML = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="0; url=%s">
+<title>Acesso Bloqueado</title>
+<style>
+body{font-family:sans-serif;background:#0d1117;color:#e6edf3;display:flex;
+align-items:center;justify-content:center;min-height:100vh;margin:0}
+.box{text-align:center;padding:40px}
+h1{color:#f85149;margin-bottom:12px}
+a{color:#58a6ff}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>🚫 Acesso Bloqueado</h1>
+  <p>%s está bloqueado pela política de rede.</p>
+  <p><a href="%s">Ver detalhes</a></p>
+</div>
+</body>
+</html>`
 
 func copyHopByHopFiltered(dst, src http.Header) {
 	for k, vs := range src {
