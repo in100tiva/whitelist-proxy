@@ -89,39 +89,45 @@ function applyTheme(theme) {
 // Troca de tema com animação circular a partir do ponto de clique.
 // Claro → escuro: círculo fecha (colapsa) no ponto clicado.
 // Escuro → claro: círculo abre (expande) a partir do ponto clicado.
-// Animação circular via Web Animations API (WAAPI).
-// Evita problemas de batching de estilos que afetam CSS transitions.
-// Funciona em Chrome, Firefox e Edge modernos.
+// Animação circular via @keyframes injetado dinamicamente.
+// Não depende de WAAPI nem de View Transitions API — usa apenas
+// CSS @keyframes + animationend, suportados em todos os browsers modernos.
+let _themeAnimSeq = 0;
 function applyThemeWithAnimation(theme, event) {
   if (!event || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     applyTheme(theme);
     return;
   }
 
-  const x  = event.clientX;
-  const y  = event.clientY;
-  const r  = Math.hypot(
+  const x  = Math.round(event.clientX);
+  const y  = Math.round(event.clientY);
+  const r  = Math.ceil(Math.hypot(
     Math.max(x, window.innerWidth  - x),
     Math.max(y, window.innerHeight - y)
-  );
-  const bg = theme === 'dark' ? '#0a0b0d' : '#f7f8fa';
+  ));
+  const bg  = theme === 'dark' ? '#0a0b0d' : '#f7f8fa';
+  const id  = `wlp-theme-${++_themeAnimSeq}`;
 
-  const el = document.createElement('div');
-  el.style.cssText = `position:fixed;inset:0;z-index:99999;pointer-events:none;background:${bg}`;
-  document.body.appendChild(el);
+  // Injeta @keyframes com coordenadas exatas (sem CSS custom properties)
+  const styleEl = document.createElement('style');
+  styleEl.textContent = `@keyframes ${id}{` +
+    `from{clip-path:circle(0px at ${x}px ${y}px)}` +
+    `to{clip-path:circle(${r}px at ${x}px ${y}px)}}`;
+  document.head.appendChild(styleEl);
 
-  const anim = el.animate(
-    [
-      { clipPath: `circle(0px at ${x}px ${y}px)` },
-      { clipPath: `circle(${r}px at ${x}px ${y}px)` },
-    ],
-    { duration: 500, easing: 'ease-in-out', fill: 'forwards' }
-  );
+  // Overlay que recebe a animação
+  const overlay = document.createElement('div');
+  overlay.style.cssText =
+    `position:fixed;top:0;left:0;width:100%;height:100%;` +
+    `z-index:99999;pointer-events:none;background:${bg};` +
+    `animation:${id} 500ms ease-in-out forwards`;
+  document.body.appendChild(overlay);
 
-  anim.onfinish = () => {
+  overlay.addEventListener('animationend', () => {
     applyTheme(theme);
-    el.remove();
-  };
+    overlay.remove();
+    styleEl.remove();
+  }, { once: true });
 }
 
 // --------------- TOKEN BASEADO NO HORÁRIO ---------------
