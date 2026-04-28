@@ -89,9 +89,11 @@ function applyTheme(theme) {
 // Troca de tema com animação circular a partir do ponto de clique.
 // Claro → escuro: círculo fecha (colapsa) no ponto clicado.
 // Escuro → claro: círculo abre (expande) a partir do ponto clicado.
+// Animação circular usando overlay CSS — compatível com todos os browsers.
+// Um círculo da cor do tema destino expande a partir do ponto do clique
+// cobrindo a tela; ao terminar o tema real é aplicado e o overlay removido.
 function applyThemeWithAnimation(theme, event) {
-  if (!event || !document.startViewTransition ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (!event || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     applyTheme(theme);
     return;
   }
@@ -100,22 +102,30 @@ function applyThemeWithAnimation(theme, event) {
     Math.max(x, window.innerWidth  - x),
     Math.max(y, window.innerHeight - y)
   );
-  const transition = document.startViewTransition(() => applyTheme(theme));
-  transition.ready.then(() => {
-    if (theme !== 'dark') {
-      // indo para CLARO: nova view expande em círculo
-      document.documentElement.animate(
-        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-        { duration: 480, easing: 'ease-in-out', pseudoElement: '::view-transition-new(root)' }
-      );
-    } else {
-      // indo para ESCURO: view antiga colapsa em círculo
-      document.documentElement.animate(
-        { clipPath: [`circle(${radius}px at ${x}px ${y}px)`, `circle(0px at ${x}px ${y}px)`] },
-        { duration: 480, easing: 'ease-in-out', pseudoElement: '::view-transition-old(root)' }
-      );
-    }
+
+  // Cor do fundo do tema destino (combina com --bg-base de cada tema)
+  const bg = theme === 'dark' ? '#0a0b0d' : '#f7f8fa';
+
+  const overlay = document.createElement('div');
+  Object.assign(overlay.style, {
+    position:      'fixed',
+    inset:         '0',
+    zIndex:        '99999',
+    pointerEvents: 'none',
+    background:    bg,
+    clipPath:      `circle(0px at ${x}px ${y}px)`,
   });
+  document.body.appendChild(overlay);
+
+  // Força reflow para que o estado inicial seja pintado antes da transição
+  overlay.getBoundingClientRect();
+  overlay.style.transition = 'clip-path 500ms ease-in-out';
+  overlay.style.clipPath    = `circle(${radius}px at ${x}px ${y}px)`;
+
+  overlay.addEventListener('transitionend', () => {
+    applyTheme(theme);
+    overlay.remove();
+  }, { once: true });
 }
 
 // --------------- TOKEN BASEADO NO HORÁRIO ---------------
