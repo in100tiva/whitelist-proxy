@@ -92,42 +92,46 @@ function applyTheme(theme) {
 // Animação circular via @keyframes injetado dinamicamente.
 // Não depende de WAAPI nem de View Transitions API — usa apenas
 // CSS @keyframes + animationend, suportados em todos os browsers modernos.
-let _themeAnimSeq = 0;
 function applyThemeWithAnimation(theme, event) {
   if (!event || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     applyTheme(theme);
     return;
   }
 
-  const x  = Math.round(event.clientX);
-  const y  = Math.round(event.clientY);
-  const r  = Math.ceil(Math.hypot(
-    Math.max(x, window.innerWidth  - x),
-    Math.max(y, window.innerHeight - y)
-  ));
-  const bg  = theme === 'dark' ? '#0a0b0d' : '#f7f8fa';
-  const id  = `wlp-theme-${++_themeAnimSeq}`;
-
-  // Injeta @keyframes com coordenadas exatas (sem CSS custom properties)
-  const styleEl = document.createElement('style');
-  styleEl.textContent = `@keyframes ${id}{` +
-    `from{clip-path:circle(0px at ${x}px ${y}px)}` +
-    `to{clip-path:circle(${r}px at ${x}px ${y}px)}}`;
-  document.head.appendChild(styleEl);
-
-  // Overlay que recebe a animação
-  const overlay = document.createElement('div');
-  overlay.style.cssText =
-    `position:fixed;top:0;left:0;width:100%;height:100%;` +
-    `z-index:99999;pointer-events:none;background:${bg};` +
-    `animation:${id} 500ms ease-in-out forwards`;
-  document.body.appendChild(overlay);
-
-  overlay.addEventListener('animationend', () => {
+  // Evita animações sobrepostas
+  if (document.querySelector('.wlp-theme-overlay')) {
     applyTheme(theme);
-    overlay.remove();
-    styleEl.remove();
-  }, { once: true });
+    return;
+  }
+
+  // Coordenadas do clique como variáveis CSS no :root
+  const root = document.documentElement;
+  root.style.setProperty('--wlp-x', event.clientX + 'px');
+  root.style.setProperty('--wlp-y', event.clientY + 'px');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'wlp-theme-overlay';
+
+  if (theme === 'light') {
+    // ESCURO → CLARO: círculo claro expande do clique; tema aplicado ao final
+    overlay.style.background = '#f7f8fa';
+    overlay.classList.add('wlp-expand');
+    document.body.appendChild(overlay);
+    overlay.addEventListener('animationend', () => {
+      applyTheme(theme);
+      overlay.remove();
+    }, { once: true });
+
+  } else {
+    // CLARO → ESCURO: aplica tema imediatamente; overlay claro colapsa revelando o escuro
+    applyTheme(theme);
+    overlay.style.background = '#f7f8fa';
+    overlay.classList.add('wlp-collapse');
+    document.body.appendChild(overlay);
+    overlay.addEventListener('animationend', () => {
+      overlay.remove();
+    }, { once: true });
+  }
 }
 
 // --------------- TOKEN BASEADO NO HORÁRIO ---------------

@@ -102,11 +102,36 @@
 
 [hidden] { display: none !important; }
 
-/* View Transitions — animação circular de troca de tema */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
+/* ---- Animação circular de troca de tema ---- */
+
+@keyframes wlp-circle-expand {
+  from { clip-path: circle(0px     at var(--wlp-x, 50%) var(--wlp-y, 50%)); }
+  to   { clip-path: circle(200vmax at var(--wlp-x, 50%) var(--wlp-y, 50%)); }
+}
+
+@keyframes wlp-circle-collapse {
+  from { clip-path: circle(200vmax at var(--wlp-x, 50%) var(--wlp-y, 50%)); }
+  to   { clip-path: circle(0px     at var(--wlp-x, 50%) var(--wlp-y, 50%)); }
+}
+
+.wlp-theme-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+/* círculo parte do ponto e expande cobrindo a tela */
+.wlp-theme-overlay.wlp-expand {
+  clip-path: circle(0px at var(--wlp-x, 50%) var(--wlp-y, 50%));
+  animation: wlp-circle-expand 500ms ease-in-out forwards;
+}
+
+/* círculo cobre a tela e colapsa no ponto revelando o tema abaixo */
+.wlp-theme-overlay.wlp-collapse {
+  clip-path: circle(200vmax at var(--wlp-x, 50%) var(--wlp-y, 50%));
+  animation: wlp-circle-collapse 500ms ease-in-out forwards;
 }
 
 html, body {
