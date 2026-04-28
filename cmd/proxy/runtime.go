@@ -81,7 +81,7 @@ func startRuntime() (*appRuntime, error) {
 		},
 	)
 
-	proxySrv := proxy.New(proxyAddr, matcher, lg)
+	proxySrv := proxy.New(proxyAddr, adminAddr, matcher, lg)
 	go func() {
 		if err := proxySrv.ListenAndServe(); err != nil {
 			lg.Infof("proxy parou: %v", err)

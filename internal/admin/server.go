@@ -11,6 +11,7 @@ import (
 	"embed"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -72,6 +73,9 @@ func New(addr, tokenPath, whitelistPath, proxyAddr string, m *filter.Matcher, lg
 	mux.HandleFunc("/whitelist", s.auth(s.handleWhitelist))
 	mux.HandleFunc("/whitelist/reload", s.auth(s.handleReload))
 	mux.HandleFunc("/logs/recent", s.auth(s.handleLogs))
+
+	// Página de acesso bloqueado — sem auth, acessível pelo proxy ao redirecionar.
+	mux.HandleFunc("/blocked", s.handleBlocked)
 
 	// UI estática (sem auth — quem fizer fetch da API ainda precisa do token).
 	uiSub, err := fs.Sub(uiAssets, "ui")
@@ -273,6 +277,148 @@ func (s *Server) handleBrowsersConfigure(w http.ResponseWriter, r *http.Request)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"browsers": s.browsers.Detect()})
 }
+
+func (s *Server) handleBlocked(w http.ResponseWriter, r *http.Request) {
+	host := r.URL.Query().Get("host")
+	if host == "" {
+		host = "domínio bloqueado"
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusForbidden)
+	_, _ = fmt.Fprintf(w, blockedPageHTML, host)
+}
+
+const blockedPageHTML = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acesso Bloqueado</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 56px 48px;
+      max-width: 520px;
+      width: 100%%;
+      text-align: center;
+      box-shadow: 0 16px 48px rgba(0,0,0,.4);
+    }
+    .shield {
+      width: 80px; height: 80px;
+      background: rgba(248,81,73,.12);
+      border-radius: 50%%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 28px;
+    }
+    .shield svg { width: 40px; height: 40px; }
+    h1 {
+      font-size: 26px; font-weight: 700;
+      color: #f85149;
+      margin-bottom: 12px;
+      letter-spacing: -.3px;
+    }
+    .subtitle {
+      font-size: 14px; color: #8b949e;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .host-box {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-family: 'SFMono-Regular', Consolas, monospace;
+      font-size: 15px;
+      color: #f0883e;
+      margin-bottom: 28px;
+      word-break: break-all;
+    }
+    .info {
+      font-size: 13px; color: #6e7681;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+    .info strong { color: #8b949e; }
+    .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px; font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-secondary {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #e6edf3;
+    }
+    .divider {
+      border: none; border-top: 1px solid #21262d;
+      margin: 32px 0 24px;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; color: #6e7681;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%%;
+      background: #3fb950;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="shield">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+
+    <h1>Acesso Bloqueado</h1>
+    <p class="subtitle">Este conteúdo foi bloqueado pela política de acesso da rede.</p>
+
+    <div class="host-box">%s</div>
+
+    <p class="info">
+      O acesso a este domínio está <strong>restrito</strong> pelo administrador.<br>
+      Se você precisa acessar este conteúdo por motivos de trabalho,<br>
+      entre em contato com o responsável pela rede.
+    </p>
+
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="history.back()">
+        ← Voltar
+      </button>
+    </div>
+
+    <hr class="divider">
+    <span class="badge">
+      <span class="dot"></span>
+      Whitelist Proxy — proteção ativa
+    </span>
+  </div>
+</body>
+</html>`
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")

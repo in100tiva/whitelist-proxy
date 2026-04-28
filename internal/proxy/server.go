@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -27,16 +28,19 @@ const maxClientHello = 16 * 1024
 
 // Server é o proxy HTTP/HTTPS com whitelist.
 type Server struct {
-	addr    string
-	matcher *filter.Matcher
-	log     *logger.Logger
+	addr      string
+	adminAddr string // usado para redirecionar para página de bloqueio
+	matcher   *filter.Matcher
+	log       *logger.Logger
 
 	srv *http.Server
 }
 
 // New cria o servidor mas não escuta ainda. addr no formato "host:porta".
-func New(addr string, m *filter.Matcher, lg *logger.Logger) *Server {
-	s := &Server{addr: addr, matcher: m, log: lg}
+// adminAddr é o endereço da UI admin (ex: "127.0.0.1:8081") usado para
+// redirecionar para a página de acesso bloqueado.
+func New(addr, adminAddr string, m *filter.Matcher, lg *logger.Logger) *Server {
+	s := &Server{addr: addr, adminAddr: adminAddr, matcher: m, log: lg}
 	s.srv = &http.Server{
 		Addr:              addr,
 		Handler:           http.HandlerFunc(s.handle),
@@ -88,7 +92,7 @@ func (s *Server) handleHTTP(w http.ResponseWriter, r *http.Request) {
 			Action: "block", Proto: "http", Host: host, Client: clientIP,
 			Reason: "host fora da whitelist",
 		})
-		http.Error(w, "Bloqueado pelo proxy: "+host, http.StatusForbidden)
+		s.redirectBlocked(w, r, host)
 		return
 	}
 
@@ -146,6 +150,18 @@ func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 	target := r.URL.Host // formato "host:port" no CONNECT
 	if target == "" {
 		target = r.Host
+	}
+
+	// Pré-verificação com o host do CONNECT (antes de aceitar o túnel).
+	// Permite mostrar a página de bloqueio em vez de apenas fechar a conexão.
+	connectHost := hostOnly(target)
+	if !s.matcher.Allowed(connectHost) {
+		s.log.Log(logger.Decision{
+			Action: "block", Proto: "https", Host: connectHost, Client: clientIP,
+			Reason: "host fora da whitelist (CONNECT)",
+		})
+		s.redirectBlocked(w, r, connectHost)
+		return
 	}
 
 	hijacker, ok := w.(http.Hijacker)
@@ -316,6 +332,15 @@ var hopByHopHeaders = map[string]bool{
 	"Trailer":             true,
 	"Transfer-Encoding":   true,
 	"Upgrade":             true,
+}
+
+// redirectBlocked redireciona o cliente para a página de acesso bloqueado na UI admin.
+// Para requisições HTTP comuns, faz um redirect 302 normal.
+// Para CONNECT (HTTPS), responde com 302 antes de aceitar o túnel — Firefox segue
+// o redirect; Chrome exibe seu próprio erro de conexão (sem MITM não há alternativa).
+func (s *Server) redirectBlocked(w http.ResponseWriter, r *http.Request, host string) {
+	dest := "http://" + s.adminAddr + "/blocked?host=" + url.QueryEscape(host)
+	http.Redirect(w, r, dest, http.StatusFound)
 }
 
 func copyHopByHopFiltered(dst, src http.Header) {
