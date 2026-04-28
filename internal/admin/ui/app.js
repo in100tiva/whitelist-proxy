@@ -89,43 +89,39 @@ function applyTheme(theme) {
 // Troca de tema com animação circular a partir do ponto de clique.
 // Claro → escuro: círculo fecha (colapsa) no ponto clicado.
 // Escuro → claro: círculo abre (expande) a partir do ponto clicado.
-// Animação circular usando overlay CSS — compatível com todos os browsers.
-// Um círculo da cor do tema destino expande a partir do ponto do clique
-// cobrindo a tela; ao terminar o tema real é aplicado e o overlay removido.
+// Animação circular via Web Animations API (WAAPI).
+// Evita problemas de batching de estilos que afetam CSS transitions.
+// Funciona em Chrome, Firefox e Edge modernos.
 function applyThemeWithAnimation(theme, event) {
   if (!event || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     applyTheme(theme);
     return;
   }
-  const x = event.clientX, y = event.clientY;
-  const radius = Math.hypot(
+
+  const x  = event.clientX;
+  const y  = event.clientY;
+  const r  = Math.hypot(
     Math.max(x, window.innerWidth  - x),
     Math.max(y, window.innerHeight - y)
   );
-
-  // Cor do fundo do tema destino (combina com --bg-base de cada tema)
   const bg = theme === 'dark' ? '#0a0b0d' : '#f7f8fa';
 
-  const overlay = document.createElement('div');
-  Object.assign(overlay.style, {
-    position:      'fixed',
-    inset:         '0',
-    zIndex:        '99999',
-    pointerEvents: 'none',
-    background:    bg,
-    clipPath:      `circle(0px at ${x}px ${y}px)`,
-  });
-  document.body.appendChild(overlay);
+  const el = document.createElement('div');
+  el.style.cssText = `position:fixed;inset:0;z-index:99999;pointer-events:none;background:${bg}`;
+  document.body.appendChild(el);
 
-  // Força reflow para que o estado inicial seja pintado antes da transição
-  overlay.getBoundingClientRect();
-  overlay.style.transition = 'clip-path 500ms ease-in-out';
-  overlay.style.clipPath    = `circle(${radius}px at ${x}px ${y}px)`;
+  const anim = el.animate(
+    [
+      { clipPath: `circle(0px at ${x}px ${y}px)` },
+      { clipPath: `circle(${r}px at ${x}px ${y}px)` },
+    ],
+    { duration: 500, easing: 'ease-in-out', fill: 'forwards' }
+  );
 
-  overlay.addEventListener('transitionend', () => {
+  anim.onfinish = () => {
     applyTheme(theme);
-    overlay.remove();
-  }, { once: true });
+    el.remove();
+  };
 }
 
 // --------------- TOKEN BASEADO NO HORÁRIO ---------------
