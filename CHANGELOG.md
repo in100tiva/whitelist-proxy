@@ -19,6 +19,10 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 - Dependabot semanal para módulos Go e para as próprias GitHub Actions.
 - Arquivos de comunidade: `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`,
   `SUPPORT.md`, templates de issue e pull request, `CODEOWNERS` e `CITATION.cff`.
+- Testes de fuzzing nativos do Go — `FuzzAllowed` e `FuzzLoad` (matcher de
+  regras) e `FuzzParseSNI` (parser de `ClientHello`) — mais o workflow
+  `Fuzzing`, que roda cada alvo por 90 s toda semana e guarda o corpus quando
+  encontra uma entrada que quebra o parser.
 
 ### Alterado
 
@@ -30,6 +34,9 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
   caminho de instalação a partir das releases e link do roadmap para as issues.
 - Dependências atualizadas: `golang.org/x/sys` v0.50.0 e as GitHub Actions usadas
   nos workflows. Com isso, o projeto passa a exigir Go 1.26+.
+- Todas as GitHub Actions passaram a ser referenciadas pelo SHA do commit
+  (com a versão em comentário, ex.: `# v7`) para que o Dependabot continue
+  atualizando sem que o código executado na CI possa mudar por baixo.
 
 ## [1.0.0] - 2026-11-23
 

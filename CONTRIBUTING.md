@@ -55,6 +55,18 @@ go test ./... -race
 GOOS=windows GOARCH=amd64 go build -o /dev/null ./cmd/proxy
 ```
 
+Alvos de fuzzing (opcional no dia a dia, obrigatório ao mexer no parser):
+
+```sh
+go test ./internal/filter -run '^$' -fuzz=FuzzAllowed -fuzztime=30s
+go test ./internal/proxy  -run '^$' -fuzz=FuzzParseSNI -fuzztime=30s
+```
+
+O workflow `Fuzzing` roda os três alvos (`FuzzAllowed`, `FuzzLoad`,
+`FuzzParseSNI`) semanalmente. Se o fuzzer achar uma entrada que quebra o
+parser, o caso mínimo é salvo em `testdata/fuzz/` — versione esse arquivo como
+teste de regressão.
+
 Regras:
 
 - **Sem dependência nova sem justificativa** no PR. A biblioteca padrão dá conta
