@@ -16,7 +16,7 @@ que entre sem rodada extra de revisão.
 
 | Item | Versão |
 |------|--------|
-| Go | 1.22+ (`go.mod`) |
+| Go | 1.26+ (`go.mod`) |
 | Windows | para testar serviço, registro e `install.ps1` |
 | Linux/macOS | suficiente para desenvolver e rodar `go test ./...` |
 

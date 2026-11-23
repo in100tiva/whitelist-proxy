@@ -5,7 +5,7 @@
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/in100tiva/whitelist-proxy/badge)](https://securityscorecards.dev/viewer/?uri=github.com/in100tiva/whitelist-proxy)
 [![Release](https://img.shields.io/github/v/release/in100tiva/whitelist-proxy?style=flat-square&label=release&color=2f81f7)](https://github.com/in100tiva/whitelist-proxy/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-3DA639?style=flat-square)](LICENSE)
-![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go&logoColor=white)
+![Go](https://img.shields.io/badge/Go-1.26+-00ADD8?style=flat-square&logo=go&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-Service-0078D6?style=flat-square&logo=windows&logoColor=white)
 ![Web UI](https://img.shields.io/badge/UI-web%20embutida-0A66C2?style=flat-square)
 
@@ -80,7 +80,7 @@ gh attestation verify .\proxy-windows-amd64.zip --repo in100tiva/whitelist-proxy
 
 ### 2. Instalar a partir do código
 
-Pré-requisito: Go 1.22+.
+Pré-requisito: Go 1.26+.
 
 ```sh
 # direto do código, sem clonar

@@ -28,6 +28,8 @@ projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 - Formatação `gofmt` de `internal/logger/logger.go` e `internal/sysproxy/other.go`.
 - README reescrito: badges vivos de CI/CodeQL/release, diagrama de fluxo,
   caminho de instalação a partir das releases e link do roadmap para as issues.
+- Dependências atualizadas: `golang.org/x/sys` v0.50.0 e as GitHub Actions usadas
+  nos workflows. Com isso, o projeto passa a exigir Go 1.26+.
 
 ## [1.0.0] - 2026-11-23
 
