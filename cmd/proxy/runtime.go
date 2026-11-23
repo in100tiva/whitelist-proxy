@@ -9,12 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/admin"
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/config"
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/filter"
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/logger"
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/proxy"
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/sysproxy"
+	"github.com/in100tiva/whitelist-proxy/internal/admin"
+	"github.com/in100tiva/whitelist-proxy/internal/config"
+	"github.com/in100tiva/whitelist-proxy/internal/filter"
+	"github.com/in100tiva/whitelist-proxy/internal/logger"
+	"github.com/in100tiva/whitelist-proxy/internal/proxy"
+	"github.com/in100tiva/whitelist-proxy/internal/sysproxy"
 )
 
 // Endereços padrão. Hardcoded para simplificar (não há flag --addr ainda).

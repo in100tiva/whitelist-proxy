@@ -1,5 +1,9 @@
 # Whitelist Proxy
 
+[![CI](https://github.com/in100tiva/whitelist-proxy/actions/workflows/ci.yml/badge.svg)](https://github.com/in100tiva/whitelist-proxy/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/in100tiva/whitelist-proxy/actions/workflows/codeql.yml/badge.svg)](https://github.com/in100tiva/whitelist-proxy/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/in100tiva/whitelist-proxy/badge)](https://securityscorecards.dev/viewer/?uri=github.com/in100tiva/whitelist-proxy)
+[![Release](https://img.shields.io/github/v/release/in100tiva/whitelist-proxy?style=flat-square&label=release&color=2f81f7)](https://github.com/in100tiva/whitelist-proxy/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-3DA639?style=flat-square)](LICENSE)
 ![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-Service-0078D6?style=flat-square&logo=windows&logoColor=white)
@@ -7,6 +11,7 @@
 
 > **Em 30 segundos:** um proxy local para Windows que só deixa sair o que está na whitelist. Inspeciona HTTPS pelo SNI (sem MITM e sem instalar certificado nos clientes) e traz UI web + API para operar as regras.
 
+[Como funciona](#como-funciona) · [Instalação](#instalação) · [Editando a whitelist](#editando-a-whitelist) · [Interface web](#interface-web) · [API](#api-administrativa) · [Limitações](#limitações-conhecidas) · [Roadmap](#roadmap) · [Contribuindo](#contribuindo)
 
 Proxy local para Windows escrito em Go que funciona como **whitelist de
 domínios**: tudo que não estiver na lista é bloqueado. Inspeção de HTTPS
@@ -27,9 +32,60 @@ filtragem de HTTP via header `Host`.
 - Whitelist em `whitelist.json` ao lado do binário, com hot-reload (watcher
   baseado em `mtime` polling).
 
-## Compilando
+### Fluxo de uma requisição
+
+```mermaid
+flowchart TD
+    A[Cliente usa o proxy 127.0.0.1:8080] --> B{Método CONNECT?}
+    B -- sim, HTTPS --> C[Lê o ClientHello TLS]
+    C --> D[Extrai o SNI sem fazer handshake]
+    B -- não, HTTP --> E[Usa o header Host]
+    D --> F{Matcher: exact / wildcard / regex}
+    E --> F
+    F -- permitido --> G[Tunnel TCP bidirecional ao destino]
+    F -- bloqueado --> H[403 + decisão registrada no log JSONL]
+    G --> I[Log JSONL + buffer circular em memória]
+    H --> I
+    I --> J[UI web e /api/logs/recent]
+```
+
+## Instalação
+
+### 1. Baixar a release (recomendado)
+
+Binários pré-compilados ficam na página de
+[**Releases**](https://github.com/in100tiva/whitelist-proxy/releases/latest):
+
+| Sistema | Arquitetura | Arquivo |
+|---------|-------------|---------|
+| Windows | x64 | `proxy-windows-amd64.zip` |
+| Windows | arm64 | `proxy-windows-arm64.zip` |
+| Linux | x64 / arm64 | `proxy-linux-{amd64,arm64}.tar.gz` |
+| macOS | Intel / Apple Silicon | `proxy-darwin-{amd64,arm64}.tar.gz` |
+
+No Windows, baixe o `.zip`, extraia `proxy.exe` e siga
+[Instalando como serviço](#instalando-como-serviço).
+
+Os executáveis **não são assinados** com certificado comercial, então o
+SmartScreen pode avisar na primeira execução — é esperado. Para conferir a
+integridade, use o `SHA256SUMS.txt` da release ou a atestação de procedência:
+
+```powershell
+# checksum
+Get-FileHash .\proxy-windows-amd64.zip -Algorithm SHA256
+
+# atestação (requer gh CLI autenticado)
+gh attestation verify .\proxy-windows-amd64.zip --repo in100tiva/whitelist-proxy
+```
+
+### 2. Instalar a partir do código
 
 Pré-requisito: Go 1.22+.
+
+```sh
+# direto do código, sem clonar
+go install github.com/in100tiva/whitelist-proxy/cmd/proxy@latest
+```
 
 Em qualquer plataforma (gera o binário Windows):
 
@@ -72,6 +128,7 @@ proxy.exe stop        para o serviço
 proxy.exe run         executa em foreground (debug)
 proxy.exe status      mostra o estado do serviço e do proxy do sistema
 proxy.exe ui          imprime e abre a URL da UI web (com token)
+proxy.exe version     mostra a versão do binário
 ```
 
 ## Interface web
@@ -107,7 +164,11 @@ exigem prompt elevado.
 
 ## Editando a whitelist
 
-Arquivo: `C:\Program Files\WhitelistProxy\whitelist.json`
+Arquivo em produção: `C:\Program Files\WhitelistProxy\whitelist.json`.
+
+> O `whitelist.json` da raiz do repositório é apenas um **exemplo**. O arquivo
+> real é criado na primeira execução (ou copiado pelo `install.ps1`) e está no
+> `.gitignore` — não versione a lista do seu cliente.
 
 ```json
 {
@@ -186,6 +247,14 @@ curl -x http://127.0.0.1:8080 https://www.google.com
 Lembre que `go run ./cmd/proxy run` em **não-Windows** só sobe o proxy/admin —
 a configuração do proxy do sistema (registro do Windows) é no-op.
 
+A suíte automatizada roda sem privilégio e sem rede externa:
+
+```sh
+gofmt -l .      # deve sair vazio
+go vet ./...
+go test ./... -race
+```
+
 ## Limitações conhecidas
 
 - **DNS over HTTPS / DNS over TLS no navegador.** Se o navegador resolve
@@ -207,10 +276,35 @@ a configuração do proxy do sistema (registro do Windows) é no-op.
   (`https://1.2.3.4`) sem SNI é bloqueado por padrão (sem SNI = sem
   decisão = bloqueia).
 
+## Segurança
+
+- A API e a UI escutam **somente em loopback**; autenticação por token gerado
+  localmente em `admin.token`.
+- O projeto não faz MITM nem instala certificado raiz: a inspeção é só do SNI.
+- Relatos de vulnerabilidade têm canal privado — veja [SECURITY.md](SECURITY.md).
+  **Não** abra issue pública para falha de segurança.
+- Postura do repositório acompanhada pelo OpenSSF Scorecard, CodeQL e
+  Dependabot a cada push.
+
+## Roadmap
+
+O roadmap de fase 2 é acompanhado nas
+[issues](https://github.com/in100tiva/whitelist-proxy/issues):
+
+- [ ] Interceptação via **WinDivert** (não depende do proxy do sistema; vê
+      todo tráfego TCP/UDP, mesmo de apps que ignoram o WinINet).
+- [ ] Política aplicada via **HKLM** + GPO (impede o usuário de desligar).
+- [ ] Bloqueio de QUIC (UDP/443) e endpoints de DoH conhecidos.
+- [ ] UI mínima (system tray) para inspecionar bloqueios em tempo real.
+
+Tem uma ideia fora dessa lista? Abra uma
+[issue de ideia](https://github.com/in100tiva/whitelist-proxy/issues/new?template=feature_request.yml).
+
 ## Estrutura do projeto
 
 ```
 whitelist-proxy/
+├── .github/                 # CI, CodeQL, Scorecard, Dependabot, templates
 ├── go.mod
 ├── cmd/proxy/
 │   ├── main.go              # dispatcher de subcomandos
@@ -231,19 +325,21 @@ whitelist-proxy/
 │   ├── admin/server.go      # API REST (auth via Bearer token)
 │   ├── admin/ui/            # UI web embutida (index.html + style.css + app.js)
 │   └── logger/logger.go     # log estruturado JSONL com rotação diária
-├── whitelist.json           # exemplo
+├── whitelist.json           # exemplo (o real é criado em runtime)
 ├── install.ps1              # script de instalação
+├── CHANGELOG.md
+├── SECURITY.md / CONTRIBUTING.md / CODE_OF_CONDUCT.md / SUPPORT.md
 └── README.md
 ```
 
-## Roadmap (fase 2)
+## Contribuindo
 
-- [ ] Interceptação via **WinDivert** (não depende do proxy do sistema; vê
-      todo tráfego TCP/UDP, mesmo de apps que ignoram o WinINet).
-- [ ] Política aplicada via **HKLM** + GPO (impede o usuário de desligar).
-- [ ] Bloqueio de QUIC (UDP/443) e endpoints de DoH conhecidos.
-- [ ] UI mínima (system tray) para inspecionar bloqueios em tempo real.
+Contribuições são bem-vindas — leia o [CONTRIBUTING.md](CONTRIBUTING.md) e o
+[Código de Conduta](CODE_OF_CONDUCT.md). Para dúvidas de uso, use as
+[Discussions](https://github.com/in100tiva/whitelist-proxy/discussions); para
+bugs, o [template de issue](.github/ISSUE_TEMPLATE/bug_report.yml).
 
+Se este projeto te ajudou, uma ⭐ no repositório ajuda outros a encontrá-lo.
 
 ## Licença
 

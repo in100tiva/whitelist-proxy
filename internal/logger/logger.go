@@ -14,12 +14,12 @@ import (
 
 // Decision é o registro estruturado de cada decisão do proxy.
 type Decision struct {
-	Time    time.Time `json:"time"`
-	Action  string    `json:"action"` // "allow" ou "block"
-	Proto   string    `json:"proto"`  // "http" ou "https"
-	Host    string    `json:"host"`
-	Client  string    `json:"client"` // IP origem
-	Reason  string    `json:"reason,omitempty"`
+	Time   time.Time `json:"time"`
+	Action string    `json:"action"` // "allow" ou "block"
+	Proto  string    `json:"proto"`  // "http" ou "https"
+	Host   string    `json:"host"`
+	Client string    `json:"client"` // IP origem
+	Reason string    `json:"reason,omitempty"`
 }
 
 // Logger escreve em arquivo (rotacionado por dia) e mantém um ring buffer.
@@ -35,9 +35,9 @@ type Logger struct {
 	ringSize int
 
 	// Contadores totais desde a inicialização.
-	startedAt    time.Time
-	allowCount   uint64
-	blockCount   uint64
+	startedAt  time.Time
+	allowCount uint64
+	blockCount uint64
 }
 
 // Stats devolve um snapshot dos contadores acumulados.

@@ -21,6 +21,9 @@ import (
 const serviceName = "WhitelistProxy"
 const serviceDesc = "Proxy local com whitelist de domínios"
 
+// version é sobrescrita no build de release via -ldflags "-X main.version=v1.0.0".
+var version = "dev"
+
 func main() {
 	if len(os.Args) < 2 {
 		// Quando o Service Control Manager invoca o binário, ele NÃO passa
@@ -79,6 +82,9 @@ func main() {
 	case "help", "-h", "--help":
 		printUsage()
 
+	case "version", "--version", "-v":
+		fmt.Println("whitelist-proxy", version)
+
 	default:
 		fmt.Fprintln(os.Stderr, "subcomando desconhecido:", os.Args[1])
 		printUsage()
@@ -98,6 +104,7 @@ Subcomandos:
   stop        para o serviço
   status      mostra estado do serviço e do proxy do sistema
   ui          imprime e abre a URL da UI web (com token)
+  version     mostra a versão do binário
   help        mostra esta mensagem
 `, exe)
 }

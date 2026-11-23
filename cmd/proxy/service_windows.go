@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/sysproxy"
+	"github.com/in100tiva/whitelist-proxy/internal/sysproxy"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 )

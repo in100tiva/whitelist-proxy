@@ -1,0 +1,102 @@
+name: Bug
+description: Algo não funcionou como deveria (proxy, UI, instalação ou serviço)
+title: '[bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar! Antes de abrir, confira a seção
+        [Limitações conhecidas](../blob/main/README.md#limitações-conhecidas) do README —
+        QUIC/HTTP3, DoH e aplicações que ignoram o proxy do sistema são limitações
+        documentadas, não bugs.
+
+  - type: input
+    id: versao
+    attributes:
+      label: Versão do binário
+      description: Saída de `proxy.exe version`
+      placeholder: 'whitelist-proxy v1.0.0'
+    validations:
+      required: true
+
+  - type: dropdown
+    id: windows
+    attributes:
+      label: Versão do Windows
+      options:
+        - Windows 11
+        - Windows 10
+        - Windows Server 2022
+        - Windows Server 2019
+        - Outro / não sei
+    validations:
+      required: true
+
+  - type: dropdown
+    id: instalacao
+    attributes:
+      label: Como você está rodando
+      options:
+        - Como Windows Service (install.ps1)
+        - Em foreground (proxy.exe run)
+        - Compilado do código-fonte
+    validations:
+      required: true
+
+  - type: textarea
+    id: passos
+    attributes:
+      label: Passos para reproduzir
+      description: Lista numerada, do jeito mais curto possível.
+      placeholder: |
+        1. Adicionei a regra `*.exemplo.com`
+        2. Abri `curl -x http://127.0.0.1:8080 https://api.exemplo.com`
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Comportamento esperado
+    validations:
+      required: true
+
+  - type: textarea
+    id: obtido
+    attributes:
+      label: Comportamento obtido
+      description: Cole a mensagem de erro ou o trecho do log.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs relevantes
+      description: |
+        Trecho de `C:\Program Files\WhitelistProxy\logs\proxy-AAAA-MM-DD.log`
+        (JSONL) e/ou a saída de `proxy.exe status`.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: whitelist
+    attributes:
+      label: Regras da whitelist envolvidas
+      description: Só as regras relacionadas ao problema. Remova domínios internos.
+      render: json
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmacoes
+    attributes:
+      label: Confirmações
+      options:
+        - label: Procurei issues abertas com o mesmo problema.
+          required: true
+        - label: Estou usando a versão mais recente (release) ou `main`.
+          required: true

@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Dúvida de uso e instalação
+    url: https://github.com/in100tiva/whitelist-proxy/discussions/categories/q-a
+    about: Perguntas sobre como instalar, configurar regras ou integrar com o seu ambiente.
+  - name: Falha de segurança
+    url: https://github.com/in100tiva/whitelist-proxy/security/advisories/new
+    about: Não abra issue pública para vulnerabilidades — use o relato privado.
+  - name: Suporte e canais de atendimento
+    url: https://github.com/in100tiva/whitelist-proxy/blob/main/SUPPORT.md
+    about: O que é suportado neste projeto e onde pedir ajuda.

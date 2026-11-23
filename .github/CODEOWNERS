@@ -1,0 +1,12 @@
+# CODEOWNERS — dono padrão de qualquer alteração no repositório.
+#
+# A regra final `*` garante que o mantenedor seja marcado como revisor em
+# todos os pull requests. Regras mais específicas podem ser adicionadas
+# conforme o projeto receber colaboradores com área de atuação definida.
+
+* @in100tiva
+
+# Áreas sensíveis: qualquer mudança aqui pede revisão explícita do dono.
+/.github/ @in100tiva
+/install.ps1 @in100tiva
+/SECURITY.md @in100tiva

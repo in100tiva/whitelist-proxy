@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "Se você usar este software em pesquisa ou em um produto, cite como abaixo."
+title: "Whitelist Proxy"
+abstract: >-
+  Proxy local para Windows escrito em Go que aplica uma política de whitelist
+  de domínios. Inspeciona HTTPS pelo SNI (sem MITM e sem certificado raiz nos
+  clientes), faz filtragem de HTTP pelo header Host, recarrega a configuração a
+  quente e expõe uma interface web e uma API administrativa em loopback.
+type: software
+authors:
+  - given-names: Luan
+    family-names: Oliveira dos Santos
+    alias: in100tiva
+    website: "https://in100tiva.com/"
+version: 1.0.0
+date-released: "2026-11-23"
+license: MIT
+repository-code: "https://github.com/in100tiva/whitelist-proxy"
+url: "https://github.com/in100tiva/whitelist-proxy"
+keywords:
+  - proxy
+  - whitelist
+  - allowlist
+  - go
+  - windows
+  - sni
+  - network-security

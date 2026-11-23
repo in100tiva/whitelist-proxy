@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Verificar formatação (gofmt)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          fora=$(gofmt -l .)
+          if [ -n "$fora" ]; then
+            echo "Arquivos fora do padrão gofmt:"
+            echo "$fora"
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Compilar
+        run: go build ./...
+
+      - name: Testes (com cobertura)
+        run: go test ./... -count=1 -cover
+
+      # O race detector exige toolchain C no Windows (cgo + gcc); roda só no Linux,
+      # onde é garantido, para a matriz não ficar vermelha por ambiente.
+      - name: Testes com race detector
+        if: runner.os == 'Linux'
+        run: go test ./... -race -count=1
+
+      - name: Compilação cruzada (Linux, Windows e macOS)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for alvo in windows linux darwin; do
+            for arch in amd64 arm64; do
+              echo "→ $alvo/$arch"
+              GOOS=$alvo GOARCH=$arch CGO_ENABLED=0 go build -trimpath -o /dev/null ./cmd/proxy
+            done
+          done

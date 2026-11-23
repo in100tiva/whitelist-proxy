@@ -1,0 +1,27 @@
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+  categories:
+    - title: '🚀 Novidades'
+      labels:
+        - enhancement
+        - feature
+    - title: '🐛 Correções'
+      labels:
+        - bug
+        - fix
+    - title: '🔒 Segurança'
+      labels:
+        - security
+    - title: '⚙️ Automação e dependências'
+      labels:
+        - ci
+        - dependencies
+    - title: '📝 Documentação'
+      labels:
+        - documentation
+        - docs
+    - title: '🧰 Outras mudanças'
+      labels:
+        - '*'

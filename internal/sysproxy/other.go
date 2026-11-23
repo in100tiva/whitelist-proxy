@@ -12,6 +12,6 @@ type stubManager struct{}
 
 func NewManager() Manager { return stubManager{} }
 
-func (stubManager) Apply(Settings) error          { return errors.New("sysproxy: suportado apenas em Windows") }
-func (stubManager) Restore() error                { return nil }
-func (stubManager) Current() (Settings, error)    { return Settings{}, nil }
+func (stubManager) Apply(Settings) error       { return errors.New("sysproxy: suportado apenas em Windows") }
+func (stubManager) Restore() error             { return nil }
+func (stubManager) Current() (Settings, error) { return Settings{}, nil }

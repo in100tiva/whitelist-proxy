@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/filter"
+	"github.com/in100tiva/whitelist-proxy/internal/filter"
 )
 
 // File representa o conteúdo do whitelist.json.

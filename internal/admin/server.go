@@ -17,10 +17,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/browsers"
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/config"
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/filter"
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/logger"
+	"github.com/in100tiva/whitelist-proxy/internal/browsers"
+	"github.com/in100tiva/whitelist-proxy/internal/config"
+	"github.com/in100tiva/whitelist-proxy/internal/filter"
+	"github.com/in100tiva/whitelist-proxy/internal/logger"
 )
 
 //go:embed ui/*

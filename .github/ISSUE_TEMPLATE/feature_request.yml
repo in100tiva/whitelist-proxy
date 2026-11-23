@@ -1,0 +1,58 @@
+name: Ideia / melhoria
+description: Sugestão de funcionalidade, regra de filtro ou melhoria de usabilidade
+title: '[ideia] '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de abrir, veja o [Roadmap](../blob/main/README.md#roadmap-fase-2) —
+        WinDivert, política via GPO/HKLM, bloqueio de QUIC/DoH e tray UI já estão
+        mapeados como fase 2.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      options:
+        - Regras de filtro (exact/wildcard/regex)
+        - Proxy / túnel CONNECT
+        - Interface web
+        - Instalação / Windows Service
+        - API administrativa
+        - Logs e auditoria
+        - Documentação
+        - Outra
+    validations:
+      required: true
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qual problema isso resolve?
+      description: Descreva a situação real (quem usa, em qual cenário).
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposta
+    attributes:
+      label: Proposta
+      description: Como você imagina que funcionaria? Se puder, mostre a sintaxe da regra ou o fluxo na UI.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas consideradas
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmacoes
+    attributes:
+      label: Confirmações
+      options:
+        - label: Procurei issues e discussions com a mesma ideia.
+          required: true

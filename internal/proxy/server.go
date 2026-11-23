@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/filter"
-	"github.com/in100tiva/goproxy/whitelist-proxy/internal/logger"
+	"github.com/in100tiva/whitelist-proxy/internal/filter"
+	"github.com/in100tiva/whitelist-proxy/internal/logger"
 )
 
 // Idle timeout das conexões tuneladas. Conexões sem tráfego por mais tempo

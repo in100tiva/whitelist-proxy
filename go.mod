@@ -1,4 +1,4 @@
-module github.com/in100tiva/goproxy/whitelist-proxy
+module github.com/in100tiva/whitelist-proxy
 
 go 1.22
 
