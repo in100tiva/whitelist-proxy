@@ -1,5 +1,13 @@
 # Whitelist Proxy
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-3DA639?style=flat-square)](LICENSE)
+![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-Service-0078D6?style=flat-square&logo=windows&logoColor=white)
+![Web UI](https://img.shields.io/badge/UI-web%20embutida-0A66C2?style=flat-square)
+
+> **Em 30 segundos:** um proxy local para Windows que só deixa sair o que está na whitelist. Inspeciona HTTPS pelo SNI (sem MITM e sem instalar certificado nos clientes) e traz UI web + API para operar as regras.
+
+
 Proxy local para Windows escrito em Go que funciona como **whitelist de
 domínios**: tudo que não estiver na lista é bloqueado. Inspeção de HTTPS
 via SNI (sem MITM, sem certificado raiz instalado nos clientes) e
@@ -235,3 +243,8 @@ whitelist-proxy/
 - [ ] Política aplicada via **HKLM** + GPO (impede o usuário de desligar).
 - [ ] Bloqueio de QUIC (UDP/443) e endpoints de DoH conhecidos.
 - [ ] UI mínima (system tray) para inspecionar bloqueios em tempo real.
+
+
+## Licença
+
+[MIT](LICENSE) © Luan Oliveira dos Santos
